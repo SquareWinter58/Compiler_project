@@ -6,15 +6,12 @@
 #include "Tag_enum.hpp"
 #include "Token.hpp"
 #include "Word.hpp"
-//#include <cctype>
 #include <cctype>
-#include <istream>
 #include <memory>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 void Lexer::reserve(Word w){words.insert({w.lexeme, std::make_shared<Word>(w)});}//{words.insert({w.lexeme, w});}
 
@@ -29,6 +26,7 @@ Lexer::Lexer(std::string path): file_path{path}, eof_token{std::make_shared<Toke
     reserve({Tag::RETURN, "return"});
     file.open(file_path);
     if (!file.is_open()){throw std::runtime_error{"Filed to open file"};}
+    peek = '\0';
 }
 
 void Lexer::get_next_char(){
@@ -61,7 +59,7 @@ std::shared_ptr<Token> Lexer::scan(){
         // Utf-8 has some unique characteristics that can help determine if characters are a part of BMP, by looking at certain bits
         // refer to chapters 2 and 3 of the following document once you get a chance
         // https://www.rfc-editor.org/rfc/rfc3629
-        string lexeme{peek};
+        string lexeme{};
         while (std::isalnum(peek)) {
             lexeme += peek;
             get_next_char();
@@ -85,17 +83,22 @@ std::shared_ptr<Token> Lexer::scan(){
             float float_value{};
             int devisor{10};
             get_next_char();
+            if (!std::isdigit(peek)){
+                std::ostringstream error;
+                error << "Error on line: " << line << "float number must contain at least one digit after '.'\n";
+            }
             // since the current character stored in peek is '.', this advences the peek by one.
             while (std::isdigit(peek)) {
                 float_value += ((float)(peek-'0'))/devisor;
                 devisor *= 10;
+                get_next_char();
             }
             return shptr{new Decimal{val+float_value}};
         }
         else return shptr{new Number{val}};
     }
     else if (peek == '\'' || peek == '\"') {
-        char symbol{peek};
+        const char symbol{peek};
         string literal{""};
         while (!get_next_char(symbol)) {
             if (file.eof()){
@@ -105,18 +108,18 @@ std::shared_ptr<Token> Lexer::scan(){
             }
             literal += peek;
         }
+        get_next_char();
         return shptr{new String_literal{literal}};
     }
     switch (peek) {
         case '=':
-            if (get_next_char('=')) return shptr{ new Token{Tag::EQUAL}};
-            else return shptr{ new Token{Tag::EQUAL}};
+            if (get_next_char('=')) {get_next_char(); return shptr{ new Token{Tag::EQUAL}};} else {get_next_char(); return shptr{ new Token{Tag::ASSIGN}};}
         case '>':
-            if (get_next_char('=')) return shptr{new Token{Tag::MORE_THAN_EQUAL}}; else return shptr{new Token{Tag::MORE_THAN}};
+            if (get_next_char('=')) {get_next_char(); return shptr{new Token{Tag::MORE_THAN_EQUAL}};} else {get_next_char(); return shptr{new Token{Tag::MORE_THAN}};}
         case '<':
-            if (get_next_char('=')) return shptr{new Token{Tag::LESS_THEN_EQUAL}}; else return shptr{new Token{Tag::LESS_THAN}};
+            if (get_next_char('=')) {get_next_char(); return shptr{new Token{Tag::LESS_THEN_EQUAL}};} else {get_next_char(); return shptr{new Token{Tag::LESS_THAN}};}
         case '!':
-            if (get_next_char('=')) return shptr{new Token{Tag::NOT_EQUAL}}; else return shptr{new Token{Tag::NOT}};
+            if (get_next_char('=')) {get_next_char(); return shptr{new Token{Tag::NOT_EQUAL}};} else {get_next_char(); return shptr{new Token{Tag::NOT}};}
         
         case '/':
             {   // scoped because of tidineds.
@@ -125,54 +128,55 @@ std::shared_ptr<Token> Lexer::scan(){
                 // "ireperably" move the character forward, meaning the if and else if wont be testing the same character
                 // Sidenote, this is thankfully not something i figured out in debuging
                 if (peek == '/') {while (!get_next_char('\n')); return comment;}
-                else if (get_next_char('*')){
+                else if (peek == '*'){
                     char prev = '*';
                     while (1){
                         if (file.eof()){
                             throw std::runtime_error{"Ran out of characters before the multiline comment ended\n"};
                         }
                         get_next_char();
-                        if (prev == '*' && peek == '/') return multi_comment;
+                                                        // this primes peek for the next function call
+                        if (prev == '*' && peek == '/') { get_next_char(); return multi_comment;}
                         prev = peek;
                     }
                 }
-                else return shptr{new Token{Tag::DIV}};
+                else {get_next_char(); return shptr{new Token{Tag::DIV}};}
             }
         case '&':
         case '|':
            // scoped because of the variable declaration
-           { char prev = peek;
-            get_next_char();
-            if (prev == peek){
-                if (peek == '&') return shptr{new Token{Tag::AND}};
-                else return shptr{new Token{Tag::OR}};
+            { 
+                char prev = peek;
+                get_next_char();
+                if (prev == peek){
+                    if (peek == '&') {get_next_char(); return shptr{new Token{Tag::AND}};} else {get_next_char(); return shptr{new Token{Tag::OR}};}
+                }
+                else{
+                    std::ostringstream error;
+                    error << "Line: " << line << ": Language does not support bitwise operations\n";
+                    throw std::runtime_error{error.str()};
+                }
             }
-            else{
-                std::ostringstream error;
-                error << "Line: " << line << ": Language does not support bitwise operations\n";
-                throw std::runtime_error{error.str()};
-            }}
         case '(': 
-            return shptr{new Token{Tag::PAREN_OPEN}};
+            {get_next_char(); return shptr{new Token{Tag::PAREN_OPEN}};}
         case ')':
-            return shptr{new Token{Tag::PAREN_CLOSED}};
+            {get_next_char(); return shptr{new Token{Tag::PAREN_CLOSED}};}
         case '{':
-            return shptr{new Token{Tag::BRACKET_OPEN}};
+            {get_next_char(); return shptr{new Token{Tag::BRACKET_OPEN}};}
         case '}':
-            return shptr{new Token{Tag::BRACKET_CLOSED}};
+            {get_next_char(); return shptr{new Token{Tag::BRACKET_CLOSED}};}
         case '[':
-            return shptr{new Token{Tag::SQUARE_BRACKET_OPEN}};
+            {get_next_char(); return shptr{new Token{Tag::SQUARE_BRACKET_OPEN}};}
         case ']':
-            return shptr{new Token{Tag::SQUARE_BRACKET_CLOSED}};
+            {get_next_char(); return shptr{new Token{Tag::SQUARE_BRACKET_CLOSED}};}
         case '.':
-            return shptr{new Token{Tag::DOT}};
+            {get_next_char(); return shptr{new Token{Tag::DOT}};}
         case '+':
-            return shptr{new Token{Tag::ADD}};
+            {get_next_char(); return shptr{new Token{Tag::ADD}};}
         case '-':
-            return shptr{new Token{Tag::SUB}};
+            {get_next_char(); return shptr{new Token{Tag::SUB}};}
         case '*':
-            return shptr{new Token{Tag::MULT}};
+            {get_next_char(); return shptr{new Token{Tag::MULT}};}
     }
     throw std::runtime_error{"Illegal character/token encountered\n"};
 }
-/**/
