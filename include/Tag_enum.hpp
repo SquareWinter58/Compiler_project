@@ -1,0 +1,22 @@
+#ifndef TAG_ENUM
+#define TAG_ENUM
+enum Tag{
+    // key words
+    WHILE=256, FOR, IF, ELSE, RETURN, 
+    // single character ones.
+    ASSIGN, PAREN_OPEN, PAREN_CLOSED, BRACKET_OPEN, BRACKET_CLOSED, SQUARE_BRACKET_OPEN, SQUARE_BRACKET_CLOSED, DOT, NOT,
+    // relation operators
+    EQUAL, LESS_THAN, MORE_THAN, LESS_THEN_EQUAL, MORE_THAN_EQUAL, NOT_EQUAL,
+    // types
+    INT, FLOAT, CHAR, STRING, BOOL,
+    // logical
+    AND, OR,
+    //oprators
+    ADD, SUB, MULT, DIV,
+    // LITERALS
+    NUMBER, DECIMAL,  STRING_LITERAL, IDENTIFIER, TRUE, FALSE, COMMENT, MULTILINE_COMMENT, EOF_=-1}
+    ;
+#endif
+
+/*
+**/

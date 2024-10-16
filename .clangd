@@ -1,3 +1,2 @@
-CompileFlags:                     # Tweak the parse settings
-  Add: [--include-directory=/home/squarewinter/programming/cpp/compilers_principles_techniques_and_tools/chapter_2/lexer/include, -Wall]             # treat all files as C++, enable more warnings
-  
+CompileFlags:
+	Add: [--include-directory=/home/squarewinter/school/programming/third_year/Compilers/Compiler_project/include, -Wall]

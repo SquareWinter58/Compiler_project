@@ -1,0 +1,19 @@
+#include <ostream>
+#ifndef STRING_LIB
+#include <string>
+#endif
+
+#ifndef PERSON_CLASS
+class Person{
+    private:
+        int age;
+        std::string name;
+    public:
+        Person(int a, std::string n);
+        Person();
+        ~Person(){};
+        const std::string& get_name()const;
+        int get_age()const;
+        friend std::ostream& operator<<(std::ostream& os, const Person& person);
+};
+#endif

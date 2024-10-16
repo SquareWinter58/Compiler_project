@@ -29,6 +29,7 @@ all: $(EXECUTABLE) $(ARTIFICIAL_DEP)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@
+	echo -e "CompileFlags:\n\tAdd: [--include-directory=$$(pwd)/include, -Wall]" > .clangd
 
 
 bin/%.o: src/%.cpp 
