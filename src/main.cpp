@@ -1,4 +1,5 @@
 
+#include "Decimal.hpp"
 #include "Lexer.hpp"
 #include "Num.hpp"
 #include "Tag_enum.hpp"
@@ -17,6 +18,12 @@ int main(int argc, char* argv[]){
         token_vector.push_back(token);
         if (auto w = std::dynamic_pointer_cast<Word>(token)){
             cout << w->lexeme << '\n';
+        }
+        else if (auto n = std::dynamic_pointer_cast<Number>(token)) {
+            cout << n->value << '\n';
+        }
+        else if (auto d = std::dynamic_pointer_cast<Decimal>(token)){
+            cout << d->value << '\n';
         }
         else cout << token->tag << '\n';
         if (token->tag == Tag::EOF_) break;
