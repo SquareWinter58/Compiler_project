@@ -20,10 +20,9 @@ class Lexer{
             void reserve(Word w);
             void get_next_char();
             bool get_next_char(char c);
-            std::shared_ptr<Word> build_word();
-            std::shared_ptr<Token> build_number();
         public:
             int line = 1;
+            int character = 0;
             Lexer(std::string path);
             std::shared_ptr<Token>scan();
     };

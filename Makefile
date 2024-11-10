@@ -23,7 +23,7 @@ OBJECTS := $(patsubst src/%.cpp,bin/%.o,$(SOURCES))
 CXX=g++
 CXXFLAGS=-std=c++20 -g -O0 $(patsubst %,-I%,$(subst :, ,$(VPATH)))
 #OBJECTS=file1.o file2.o file3.o
-EXECUTABLE=lexer
+EXECUTABLE=frontend
 
 all: $(EXECUTABLE) $(ARTIFICIAL_DEP)
 

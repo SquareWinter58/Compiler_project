@@ -31,31 +31,52 @@ Lexer::Lexer(std::string path): file_path{path}, eof_token{std::make_shared<Toke
 
 void Lexer::get_next_char(){
     file.get(peek);
+    ++character;
 }
 bool Lexer::get_next_char(char c){
     file.get(peek);
+    ++character;
     if (peek == c) return true;
     peek = ' ';
     return false;
 }
-std::shared_ptr<Word> Lexer::build_word(){
-    std::string lexeme{};
-    while (std::isalnum(peek)) {
-        lexeme += peek;
-        get_next_char();
-    }
-    auto it = words.find(lexeme);
-    if (it != words.end()){
-        return it->second;
-    }
-    // cannot use shrptr here because it's type is already set to Token.
-    auto w = std::shared_ptr<Word>{new Word{Tag::IDENTIFIER, lexeme}};
-    words.insert({lexeme, w});
-    return w;
-}
 
-std::shared_ptr<Token> Lexer::build_number(){
+std::shared_ptr<Token> Lexer::scan(){
+    using std::shared_ptr;
     using shptr = std::shared_ptr<Token>;
+    using std::string;
+
+    // make peak take in one character from the file
+    for(;; get_next_char()){
+        if (file.eof()) return eof_token;
+        else if (peek == '\0') continue;
+        if (peek == ' ' || peek == '\t') continue;
+        else if (peek == '\n') {character = 0; ++line;}
+        else break;
+    }
+    
+    if (std::isalpha(peek)){
+        // for now this is used to check alphabetic characters, 
+        // it can be used to check alphabetic characters based on locale, but this implies the use of w_char_t which is discouraged.
+        // Utf-8 has some unique characteristics that can help determine if characters are a part of BMP, by looking at certain bits
+        // refer to chapters 2 and 3 of the following document once you get a chance
+        // https://www.rfc-editor.org/rfc/rfc3629
+        std::string lexeme{};
+        while (std::isalnum(peek)) {
+            lexeme += peek;
+            get_next_char();
+        }
+        auto it = words.find(lexeme);
+        if (it != words.end()){
+            return it->second;
+        }
+        // cannot use shrptr here because it's type is already set to Token.
+        auto w = std::shared_ptr<Word>{new Word{Tag::IDENTIFIER, lexeme}};
+        words.insert({lexeme, w});
+        return w;
+    }
+    else if (std::isdigit(peek)){
+            using shptr = std::shared_ptr<Token>;
     int val{};
         while (std::isdigit(peek)){
             val = val*10 + (peek-'0');
@@ -78,32 +99,6 @@ std::shared_ptr<Token> Lexer::build_number(){
             return shptr{new Decimal{val+float_value}};
         }
         else return shptr{new Number{val}};
-}
-
-std::shared_ptr<Token> Lexer::scan(){
-    using std::shared_ptr;
-    using shptr = std::shared_ptr<Token>;
-    using std::string;
-
-    // make peak take in one character from the file
-    for(;; get_next_char()){
-        if (file.eof()) return eof_token;
-        else if (peek == '\0') continue;
-        if (peek == ' ' || peek == '\t') continue;
-        else if (peek == '\n') ++line;
-        else break;
-    }
-    
-    if (std::isalpha(peek)){
-        // for now this is used to check alphabetic characters, 
-        // it can be used to check alphabetic characters based on locale, but this implies the use of w_char_t which is discouraged.
-        // Utf-8 has some unique characteristics that can help determine if characters are a part of BMP, by looking at certain bits
-        // refer to chapters 2 and 3 of the following document once you get a chance
-        // https://www.rfc-editor.org/rfc/rfc3629
-        return build_word();
-    }
-    else if (std::isdigit(peek)){
-        return build_number();
     }
     else if (peek == '\'' || peek == '\"') {
         const char symbol{peek};
@@ -111,7 +106,7 @@ std::shared_ptr<Token> Lexer::scan(){
         while (!get_next_char(symbol)) {
             if (file.eof()){
                 std::ostringstream error;
-                error << "The string literal on line " << line << " Was not closed before EOF was reached\n";
+                error << "The string literal on line " << line << " character " << character <<" Was not closed before EOF was reached\n";
                 throw std::runtime_error{error.str()};
             }
             literal += peek;
@@ -146,7 +141,7 @@ std::shared_ptr<Token> Lexer::scan(){
                                                         // this primes peek for the next function call
                         if (prev == '*' && peek == '/') { get_next_char(); return multi_comment;}
                         prev = peek;
-                        if (peek == '\n') ++line;
+                        if (peek == '\n') {character = 0; ++line;}
                     }
                 }
                 else {get_next_char(); return shptr{new Token{Tag::DIV}};}
@@ -162,7 +157,7 @@ std::shared_ptr<Token> Lexer::scan(){
                 }
                 else{
                     std::ostringstream error;
-                    error << "Line: " << line << ": Language does not support bitwise operations\n";
+                    error << "Line: " << line << " character: " << character << ": Language does not support bitwise operations\n";
                     throw std::runtime_error{error.str()};
                 }
             }
