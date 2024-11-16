@@ -7,7 +7,8 @@
     class Word: public Token{
         public:
             std::string lexeme;
-            Word(int t, std::string lex): Token{t}, lexeme{lex}{}
+            Word(Tag t, std::string lex): Token{t}, lexeme{lex}{}
+            std::string to_string(){return lexeme;}
             
     };
 #endif

@@ -1,6 +1,8 @@
 #ifndef TAG_ENUM
 #define TAG_ENUM
-enum Tag{
+#include <string>
+#include <unordered_map>
+enum class Tag{
     // key words
     WHILE=256, FOR, IF, ELSE, RETURN, 
     // single character ones.
@@ -25,8 +27,17 @@ enum Tag{
     
     // LITERALS
     //287
-    NUMBER, DECIMAL,  STRING_LITERAL, IDENTIFIER, TRUE, FALSE, COMMENT, MULTILINE_COMMENT, EOF_=-1}
-    ;
+    NUMBER, DECIMAL,  STRING_LITERAL, IDENTIFIER, TRUE, FALSE, COMMENT, MULTILINE_COMMENT, 
+    // Array
+    INDEX, TEMP, UNARY_MINUS, SEMICOLON, DO, BREAK,
+    EOF_=-1};
+const std::unordered_map<Tag, std::string> tag_to_symbol{
+    {Tag::ASSIGN, "="}, {Tag::LESS_THAN, "<"}, {Tag::LESS_THEN_EQUAL, "<="},
+    {Tag::MORE_THAN, ">"}, {Tag::MORE_THAN_EQUAL, ">="}, {Tag::EQUAL, "=="},
+    {Tag::NOT_EQUAL, "!="}, {Tag::MULT, "*"}, {Tag::DIV, "/"}, 
+    {Tag::ADD, "+"}, {Tag::SUB, "-"}, {Tag::AND, "&&"}, 
+    {Tag::OR, "||"}, {Tag::NOT, "!"}
+};
 #endif
 
 /*
